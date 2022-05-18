@@ -88,9 +88,9 @@
 <section id="environment-set-up">
 <h4>Environment set up<a class="headerlink" href="#environment-set-up" title="Permalink to this headline">¶</a></h4>
 <p>Pinto requires local versions of both Conda and Poetry.
-First make sure that you have a <em>local</em> version of Conda installed in your environment (instructions found <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html">here</a>).
-Then ensure that you have the latest version of <a class="reference external" href="https://python-poetry.org/">Poetry</a> installed following the instructions <a class="reference external" href="https://python-poetry.org/docs/master/#installing-with-the-official-installer">here</a>, the upshot being that you should just need to run</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">curl -sSL https://install.python-poetry.org | python3 - --preview</span>
+First make sure that you have a <em>local</em> version of Conda installed in your environment (instructions found <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html">here</a>. I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway).
+Then install Poetry into your base Conda environment via <code class="docutils literal notranslate"><span class="pre">pip</span></code> rather than using the Poetry installer</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m pip install poetry==1.2.0a2</span>
 </pre></div>
 </div>
 <p>Then from this directory, <strong>and in your <em>base</em> Conda environment</strong>, first make sure that this project will install to your system Python <code class="docutils literal notranslate"><span class="pre">site-packages</span></code> (i.e. the base Conda environment’s <code class="docutils literal notranslate"><span class="pre">site_packages</span></code>), run</p>
