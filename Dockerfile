@@ -27,10 +27,10 @@ RUN set +x \
 
 # use dev flag to decide how to install pinto in container
 FROM base AS true
-ENV FLAG="-e" DEV="[dev]"
+ENV DEV="[dev]"
 
 FROM base AS false
-ENV FLAG="" DEV=""
+ENV DEV=""
 
 FROM ${dev}
 
@@ -40,6 +40,6 @@ RUN set +x \
         \
         && source $CONDA_INIT \
         \
-        && pip install ${FLAG} /opt/pinto${DEV} \
+        && pip install /opt/pinto${DEV} \
         \
         && pinto --version
