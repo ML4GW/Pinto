@@ -1,5 +1,7 @@
 ARG CONDA_TAG=4.11.0
-FROM continuumio/miniconda3:${CONDA_TAG}
+ARG dev=false
+
+FROM continuumio/miniconda3:${CONDA_TAG} as base
 
 SHELL ["/bin/bash", "-c"]
 ARG POETRY_VERSION=1.2.0b2
@@ -23,15 +25,21 @@ RUN set +x \
         \
         && rm -rf /var/lib/apt/lists/*
 
-# add in pinto and install it into the
-# base environment as well
+# use dev flag to decide how to install pinto in container
+FROM base AS true
+ENV FLAG="-e" DEV="[dev]"
+
+FROM base AS false
+ENV FLAG="" DEV=""
+
+FROM ${dev}
+
+# add in pinto and install it into the base environment as well
 ADD . /opt/pinto
 RUN set +x \
         \
         && source $CONDA_INIT \
         \
-        && cd /opt/pinto \
-        \
-        && pip install . \
+        && pip install ${FLAG} /opt/pinto${DEV} \
         \
         && pinto --version
