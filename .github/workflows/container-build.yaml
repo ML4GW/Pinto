@@ -26,7 +26,7 @@ jobs:
           load: true
           tags: "pinto:dev"
           build-args: |
-          - dev=true
+            dev=true
 
       -
         name: Run tests in container
@@ -65,4 +65,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-          - dev=false
+            dev=false
