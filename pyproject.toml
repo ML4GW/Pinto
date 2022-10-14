@@ -11,9 +11,9 @@ pinto = "pinto.cli:main"
 [tool.poetry.dependencies]
 python = "^3.8,<3.10"
 toml = "^0.10"
-pyyaml = "^5.0"
 
 [tool.poetry.group.dev.dependencies]
+pip = "^21.3"
 pre-commit = "^2.16"
 pytest = "^6.2"
 Sphinx = "^4.4.0"
@@ -39,4 +39,4 @@ include_trailing_comma = true
 
 [build-system]
 requires = ["poetry>=1.2.0", "conda>4.2"]
-build-backend = "poetry.masonry.api"
+build-backend = "poetry.core.masonry.api"

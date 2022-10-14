@@ -25,21 +25,26 @@ RUN set +x \
         \
         && rm -rf /var/lib/apt/lists/*
 
+ADD . /opt/pinto
+
 # use dev flag to decide how to install pinto in container
 FROM base AS true
-ENV DEV="[dev]"
+ENV DEV="-e"
+RUN set +x \
+        \
+        && source $CONDA_INIT \
+        \
+        && cd /opt/pinto \
+        \
+        && poetry export \
+            --with dev \
+            -f requirements.txt \
+            --output requirements-dev.txt \
+        \
+        && python -m pip install -r requirements-dev.txt
 
 FROM base AS false
 ENV DEV=""
 
 FROM ${dev}
-
-# add in pinto and install it into the base environment as well
-ADD . /opt/pinto
-RUN set +x \
-        \
-        && source $CONDA_INIT \
-        \
-        && pip install /opt/pinto${DEV} \
-        \
-        && pinto --version
+RUN python -m pip install ${DEV} /opt/pinto && pinto --version
