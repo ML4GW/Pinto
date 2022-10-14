@@ -1,11 +1,43 @@
+import os
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Any, Dict, Iterable, Optional, Union
 
 import toml
 
 from pinto.env import Environment
 from pinto.logging import logger
+
+ENV = Dict[str, str]
+
+
+def read_env(env_file: Path) -> ENV:
+    env = {}
+    for row in env_file.read_text().splitlines():
+        key, value = row.split("=")
+        env[key] = value
+    return env
+
+
+@contextmanager
+def env_context(env: Union[ENV, Path, None], project_dir: Path):
+    if env is None or isinstance(env, Path):
+        env_file = env or project_dir / ".env"
+        env = read_env(env_file) if env_file.exists() else {}
+
+    existing = dict(os.environ)
+    new = existing.copy()
+    new.update(env)
+    for key, value in new.items():
+        os.environ[key] = value
+
+    try:
+        yield
+    finally:
+        [os.environ.pop(key) for key in env]
+        for key, value in existing.items():
+            os.environ[key] = value
 
 
 @dataclass
@@ -123,7 +155,7 @@ class Project(ProjectBase):
                 )
             )
 
-    def run(self, *args: str) -> str:
+    def run(self, *args: str, **kwargs: Any) -> str:
         """Run a command in the project's virtual environment
 
         Run an individual command in the project's
@@ -158,8 +190,10 @@ class Project(ProjectBase):
         if not self._venv.exists() or not self._venv.contains(self):
             self.install()
 
-        logger.debug(f"Executing command '{args}' in project {self.path}")
-        return self._venv.run(*args)
+        with env_context(kwargs.get("env"), self.path):
+            logger.debug(f"Executing command '{args}' in project {self.path}")
+            response = self._venv.run(*args)
+        return response
 
 
 @dataclass
@@ -194,7 +228,11 @@ class Pipeline(ProjectBase):
     def create_project(self, name):
         return Project(self.path / name)
 
-    def run(self):
+    def run(self, env: Optional[str] = None):
+        env = env or ".env"
+        env_file = self.path / env
+        env = read_env(env_file) if env_file.exists() else None
+
         for step in self.steps:
             logger.debug(f"Parsing pipeline step {step}")
 
@@ -208,11 +246,15 @@ class Pipeline(ProjectBase):
                     raise ValueError(f"Can't parse pipeline step '{step}'")
 
             project = self.create_project(component)
-            stdout = self.run_step(project, command, subcommand)
+            stdout = self.run_step(project, command, subcommand, env)
             logger.info(stdout)
 
     def run_step(
-        self, project: Project, command: str, subcommand: Optional[str] = None
+        self,
+        project: Project,
+        command: str,
+        subcommand: Optional[str] = None,
+        env: Optional[ENV] = None,
     ):
         typeo_arg = str(self.path)
         try:
@@ -225,4 +267,4 @@ class Pipeline(ProjectBase):
             if subcommand is not None:
                 typeo_arg += ":" + subcommand
 
-        project.run(command, "--typeo", typeo_arg)
+        project.run(command, "--typeo", typeo_arg, env=env)
