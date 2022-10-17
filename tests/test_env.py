@@ -44,7 +44,7 @@ def conda_project_with_no_environment(conda_project_dir, project_name):
 
 
 @pytest.fixture
-def test_installed_env(extras):
+def test_installed_env(extras, capfd):
     def _test_installed_env(env, project):
         """Test an environment that has ostensibly installed its project"""
 

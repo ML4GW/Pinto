@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -119,8 +120,21 @@ class PoetryEnvironment(Environment):
         builder = EditableBuilder(self._poetry, self._venv, self._io)
         builder.build()
 
-    def run(self, *args):
-        return self._venv.execute(*args)
+    def run(self, bin: str, *args: str) -> None:
+        """
+        Recycling some of the code from Poetry's Env.execute
+        method, but without calling os.execvpe which replaces
+        the process and prevents testing/pipeline execution
+        """
+        command = self._venv.get_command_from_bin(bin) + list(args)
+        env = dict(os.environ)
+        exe = subprocess.Popen(
+            [command[0]] + command[1:], env=env, shell=False
+        )
+        exe.communicate()
+
+        if exe.returncode:
+            sys.exit(exe.returncode)
 
 
 def _run_conda_command(*args):
@@ -132,10 +146,11 @@ def _run_conda_command(*args):
         raise RuntimeError("System exit raised!")
 
     if exit_code:
-        raise RuntimeError(
-            "Executing command {} failed with error:\n{}".format(args, stderr)
-        )
+        sys.exit(exit_code)
     return stdout
+
+
+_base_pattern = re.compile("(?<=-)base$")
 
 
 def _is_yaml(fname):
@@ -143,7 +158,7 @@ def _is_yaml(fname):
 
 
 def _normalize_env_name(env_name, project_name):
-    return re.sub("(?<=-)base$", project_name, env_name)
+    return _base_pattern.sub(project_name, env_name)
 
 
 def _env_exists(env_name):
@@ -183,7 +198,7 @@ class CondaEnvironment(Environment):
                 env_name = base_env
             env_name = _normalize_env_name(env_name, self.project.name)
 
-        self.base_env, self.env_name = base_env, env_name
+        self.base_env, self.name = base_env, env_name
 
     def _look_for_environment_file(self):
         # if conda environment is not specified, begin
@@ -218,7 +233,10 @@ class CondaEnvironment(Environment):
             # if this environment file doesn't live
             # in the project's directory, then take
             # it as the intended environment name
-            env_name = _normalize_env_name(env_name, self.project.name)
+            if _base_pattern.search(env_name) is not None:
+                env_name = _normalize_env_name(env_name, self.project.name)
+            else:
+                env_name = self.project.name
         return base_env, env_name
 
     def exists(self):
@@ -233,20 +251,20 @@ class CondaEnvironment(Environment):
         # if the base environment is specified as a yaml
         # file, check the name to see if it exists
         if _is_yaml(self.base_env):
-            env_name = _read_env_name(self._base_env)
+            env_name = _read_env_name(self.base_env)
 
             # if the environment doesn't exist yet, create it
             # using the indicated environnment file
             if not _env_exists(env_name):
                 logger.info(
                     "Creating conda environment {} "
-                    "from environment file {}".format(env_name, self._base_env)
+                    "from environment file {}".format(env_name, self.base_env)
                 )
 
                 # unfortunately the conda python api doesn't support
                 # creating from an environment file, so call this
                 # subprocess manually
-                conda_cmd = f"conda env create -f {self._base_env}"
+                conda_cmd = f"conda env create -f {self.base_env}"
                 response = subprocess.run(
                     conda_cmd, shell=True, capture_output=True, text=True
                 )
@@ -264,7 +282,7 @@ class CondaEnvironment(Environment):
             if env_name == self.name:
                 return
         else:
-            env_name = self._base_env
+            env_name = self.base_env
 
         if not _env_exists(env_name):
             raise ValueError(f"No base Conda environment {env_name} to clone")
@@ -276,10 +294,9 @@ class CondaEnvironment(Environment):
                 self.name, env_name
             )
         )
-        stdout = _run_conda_command(
+        _run_conda_command(
             conda.Commands.CREATE, "-n", self.name, "--clone", env_name
         )
-        logger.info(stdout)
 
     def contains(self, project: "Project") -> bool:
         project_name = project.name.replace("_", "-")
@@ -297,7 +314,7 @@ class CondaEnvironment(Environment):
         if extras is not None:
             for extra in extras:
                 cmd += f" -E {extra}"
-        response = self.run("/bin/bash", "-c", cmd)
+        self.run("/bin/bash", "-c", cmd)
 
         # Conda caches calls to `conda list`, so manually update
         # the cache to reflect the newly pip-installed packages
@@ -306,19 +323,21 @@ class CondaEnvironment(Environment):
         except KeyError:
             pass
 
-        return response
-
-    def run(self, *args):
+    def run(self, bin: str, *args: str) -> None:
         ld_lib_path = os.environ.get("LD_LIBRARY_PATH")
         if ld_lib_path is not None:
             prefix = os.environ["CONDA_PREFIX"]
             os.environ["LD_LIBRARY_PATH"] = ld_lib_path + f":{prefix}/lib"
 
         try:
-            result = _run_conda_command(
-                conda.Commands.RUN, "-n", self.name, *args
+            _run_conda_command(
+                conda.Commands.RUN,
+                "-n",
+                self.name,
+                "--no-capture-output",
+                bin,
+                *args,
             )
         finally:
             if ld_lib_path is not None:
                 os.environ["LD_LIBRARY_PATH"] = ld_lib_path
-        return result

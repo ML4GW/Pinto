@@ -1,43 +1,13 @@
 import os
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any, Dict, Iterable, Optional
 
 import toml
+from dotenv import load_dotenv
 
 from pinto.env import Environment
 from pinto.logging import logger
-
-ENV = Dict[str, str]
-
-
-def read_env(env_file: Path) -> ENV:
-    env = {}
-    for row in env_file.read_text().splitlines():
-        key, value = row.split("=")
-        env[key] = value
-    return env
-
-
-@contextmanager
-def env_context(env: Union[ENV, Path, None], project_dir: Path):
-    if env is None or isinstance(env, Path):
-        env_file = env or project_dir / ".env"
-        env = read_env(env_file) if env_file.exists() else {}
-
-    existing = dict(os.environ)
-    new = existing.copy()
-    new.update(env)
-    for key, value in new.items():
-        os.environ[key] = value
-
-    try:
-        yield
-    finally:
-        [os.environ.pop(key) for key in env]
-        for key, value in existing.items():
-            os.environ[key] = value
 
 
 @dataclass
@@ -62,8 +32,16 @@ class ProjectBase:
             )
 
     @property
-    def config(self):
+    def config(self) -> Dict:
         return self._config.copy()
+
+    def load_dotenv(self, env: Optional[str] = None) -> None:
+        if env is None or not os.path.isabs(env):
+            env = env or ".env"
+            env = self.path / env
+
+        if os.path.exists(env):
+            load_dotenv(env)
 
 
 @dataclass
@@ -189,10 +167,10 @@ class Project(ProjectBase):
 
         if not self._venv.exists() or not self._venv.contains(self):
             self.install()
+        self.load_dotenv(kwargs.get("env"))
 
-        with env_context(kwargs.get("env"), self.path):
-            logger.debug(f"Executing command '{args}' in project {self.path}")
-            response = self._venv.run(*args)
+        logger.debug(f"Executing command '{args}' in project {self.path}")
+        response = self._venv.run(*args)
         return response
 
 
@@ -229,9 +207,7 @@ class Pipeline(ProjectBase):
         return Project(self.path / name)
 
     def run(self, env: Optional[str] = None):
-        env = env or ".env"
-        env_file = self.path / env
-        env = read_env(env_file) if env_file.exists() else None
+        self.load_dotenv(env)
 
         for step in self.steps:
             logger.debug(f"Parsing pipeline step {step}")
@@ -246,7 +222,7 @@ class Pipeline(ProjectBase):
                     raise ValueError(f"Can't parse pipeline step '{step}'")
 
             project = self.create_project(component)
-            stdout = self.run_step(project, command, subcommand, env)
+            stdout = self.run_step(project, command, subcommand)
             logger.info(stdout)
 
     def run_step(
@@ -254,7 +230,6 @@ class Pipeline(ProjectBase):
         project: Project,
         command: str,
         subcommand: Optional[str] = None,
-        env: Optional[ENV] = None,
     ):
         typeo_arg = str(self.path)
         try:
@@ -267,4 +242,12 @@ class Pipeline(ProjectBase):
             if subcommand is not None:
                 typeo_arg += ":" + subcommand
 
-        project.run(command, "--typeo", typeo_arg, env=env)
+        # override the project's load_dotenv method
+        # so that it won't attempt to load any local
+        # environment file it might have
+        method = project.load_dotenv
+        project.load_dotenv = lambda self, env: None
+        try:
+            project.run(command, "--typeo", typeo_arg)
+        finally:
+            project.load_dotenv = method

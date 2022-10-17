@@ -113,8 +113,7 @@ class RunCommand(Command):
             if len(extra_args) == 0:
                 raise ValueError("Must provide a command to run!")
 
-            stdout = project.run(*extra_args, env=flags.environment)
-            logger.info(stdout)
+            project.run(*extra_args, env=flags.environment)
 
 
 class BuildCommand(Command):
