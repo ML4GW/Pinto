@@ -33,8 +33,10 @@ def extras(request):
 
 @pytest.fixture
 def make_project_dir(conda_poetry_config):
-    def f(project_name, extras=None, conda=False):
+    def f(project_name, extras=None, conda=False, subdir=False):
         project_dir = Path(__file__).resolve().parent / "tmp"
+        if subdir:
+            project_dir /= project_name
 
         standardized_name = project_name.replace("-", "_")
         # TODO: fixture for python version?

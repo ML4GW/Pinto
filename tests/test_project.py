@@ -6,7 +6,7 @@ import toml
 import yaml
 
 from pinto.env import CondaEnvironment, PoetryEnvironment
-from pinto.project import Project
+from pinto.project import Pipeline, Project
 
 
 def test_poetry_project(
@@ -108,3 +108,81 @@ def test_conda_project_with_dotenv(
     project = Project(conda_dotenv_project_dir)
     project.install()
     validate_dotenv(project)
+
+
+PIPELINE_SCRIPT = """
+import os
+from hermes.typeo import typeo
+
+
+@typeo
+def main(i: int):
+    env = int(os.environ.get("ENVARG", "0"))
+    print(f"arg is equal to {i + env}")
+"""
+
+
+def test_pipeline(make_project_dir, dotenv, capfd):
+    # create a pipeline with two projects, each with
+    # a different executable script
+    for i in [1, 2]:
+        project_dir = make_project_dir(f"project{i}", subdir=True)
+        with open(project_dir / f"project{i}.py", "w") as f:
+            f.write(PIPELINE_SCRIPT)
+
+        # update the project config to give its script a
+        # unique name and add a typeo dependency
+        with open(project_dir / "pyproject.toml", "r") as f:
+            config = toml.load(f)
+
+        config["tool"]["poetry"]["scripts"].pop("testme")
+        config["tool"]["poetry"]["scripts"][f"testme{i}"] = f"project{i}:main"
+        config["tool"]["poetry"]["dependencies"]["hermes.typeo"] = "^0.1.5"
+
+        with open(project_dir / "pyproject.toml", "w") as f:
+            toml.dump(config, f)
+
+    try:
+        with open(project_dir.parent / "pyproject.toml", "w") as f:
+            toml.dump(
+                {
+                    "tool": {
+                        "pinto": {
+                            "steps": ["project1:testme1", "project2:testme2"]
+                        },
+                        "typeo": {
+                            "scripts": {
+                                "testme1": {"i": 3},
+                                "testme2": {"i": 10},
+                            }
+                        },
+                    }
+                },
+                f,
+            )
+
+        kwargs = {}
+        if dotenv is not None:
+            with open(project_dir.parent / dotenv, "w") as f:
+                f.write("ENVARG=1\n")
+
+            # write a different dotenv to one of the projects
+            # to verify that it doesn't get used
+            with open(project_dir / ".env", "w") as f:
+                f.write("ENVARG=2\n")
+
+            # if the dotenv file has a unique name, specify
+            # it explicitly to pipeline.run
+            if dotenv != ".env":
+                kwargs["env"] = project_dir.parent / "env"
+
+        pipeline = Pipeline(project_dir.parent)
+        pipeline.run(**kwargs)
+
+        stdout = capfd.readouterr().out
+        for i in [3, 10]:
+            if dotenv is not None:
+                i = i + 1
+            assert f"arg is equal to {i}" in stdout
+    finally:
+        shutil.rmtree(project_dir.parent)

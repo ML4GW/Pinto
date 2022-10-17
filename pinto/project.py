@@ -246,7 +246,7 @@ class Pipeline(ProjectBase):
         # so that it won't attempt to load any local
         # environment file it might have
         method = project.load_dotenv
-        project.load_dotenv = lambda self, env: None
+        project.load_dotenv = lambda env: None
         try:
             project.run(command, "--typeo", typeo_arg)
         finally:
