@@ -124,4 +124,9 @@ def test_cli_run_with_dotenv(
             output = run_command(cmd)
             assert output.endswith("thom\nthom-yorke\n")
     finally:
+        project = Project(project_dir)
+        if project._venv.exists():
+            with poetry_env_context(project._venv):
+                pass
+
         shutil.rmtree(project_dir)
