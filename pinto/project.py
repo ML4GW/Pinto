@@ -187,9 +187,7 @@ class Project(ProjectBase):
         # passed in from a .env file so that users
         # can override this default behavior if they
         # really really need to
-        dotenv = kwargs.get("env")
-        if dotenv is not None:
-            self.load_dotenv(dotenv)
+        self.load_dotenv(kwargs.get("env"))
 
         logger.debug(f"Executing command '{args}' in project {self.path}")
         response = self._venv.run(*args)
