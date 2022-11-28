@@ -10,8 +10,11 @@ from typing import TYPE_CHECKING, Iterable, Optional
 
 import toml
 from cleo.application import Application
-from conda.cli import python_api as conda
-from conda.core.prefix_data import PrefixData
+try:
+    from conda.cli import python_api as conda
+    from conda.core.prefix_data import PrefixData
+except ImportError:
+    raise ImportError("Can only use pinto with conda installed")
 
 from pinto.logging import logger
 
