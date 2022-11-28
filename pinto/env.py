@@ -10,11 +10,6 @@ from typing import TYPE_CHECKING, Iterable, Optional
 
 import toml
 from cleo.application import Application
-try:
-    from conda.cli import python_api as conda
-    from conda.core.prefix_data import PrefixData
-except ImportError:
-    raise ImportError("Can only use pinto with conda installed")
 
 from pinto.logging import logger
 
@@ -24,6 +19,12 @@ with warnings.catch_warnings():
     from poetry.installation.installer import Installer
     from poetry.masonry.builders import EditableBuilder
     from poetry.utils.env import EnvManager
+
+try:
+    from conda.cli import python_api as conda
+    from conda.core.prefix_data import PrefixData
+except ImportError:
+    raise ImportError("Can only use pinto with conda installed")
 
 if TYPE_CHECKING:
     from .project import Project
@@ -60,10 +61,6 @@ class Environment:
 class PoetryEnvironment(Environment):
     def __post_init__(self):
         self._poetry = Factory().create_poetry(self.path)
-        prefix = os.getenv("CONDA_PREFIX")
-        if prefix is not None:
-            self._poetry.config.virtualenvs_path = Path(prefix) / "envs"
-
         self._manager = EnvManager(self._poetry)
         self._io = Application.create_io(self)
 

@@ -66,33 +66,61 @@ To see more examples of project structures, consult the [`examples`](./examples)
 
 
 ## Installation
-### Environment set up
-Pinto requires local versions of both Conda and Poetry.
-First make sure that you have a _local_ version of Conda installed in your environment (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html). I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway).
-Then install Poetry into your base Conda environment via `pip` rather than using the Poetry installer
+### Container
+The simplest way to get started with pinto is to run its container, which is made available through GitHub's container registry. You can pull it by running
+```
+docker pull ghcr.io/ML4GW/pinto:main
+```
+See [this document](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry) for information about how to authenticate to the GitHub container reigstry.
 
+### Conda
+Pinto can only be installed on top of Anaconda, so make sure you have a `local` install available to work with (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html). I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway.
+
+Your options are then to either install `pinto` in the `base` conda environment (recommended), or in a virtual environment. If you choose to go the latter route, the conda environments managed by pinto will be kept in a subdirectory of pinto's environment.
+
+#### Installing in the base conda environment
+First install poetry via pip
 ```console
 (base) ~$ python -m pip install "poetry>1.2.0"
 ```
-
-### Install
-You can install `pinto` in your base Conda environment with pip, either by pointing at this GitHub repo
-
+then install pinto via pip
 ```console
-(base) ~$ python -m pip install git+https://github.com/ML4GW/pinto.git
+(base) ~$ python -m pip install git+https://github.com/ML4GW/pinto@main
 ```
 
-or by cloning this repo and pip installing it locally
-
+#### In a virtual environment
+If you don't want to install pinto into your `base` conda environment, you can install it by creating an environment file like the one found [here](./environment.yaml), and creating a virtual environment like:
+```console
+(base) ~$ conda env create -f environment.yaml
 ```
-(base) ~$ git clone https://github.com/ML4GW/pinto.git
-(base) ~$ python -m pip install pinto/
+You can then activate your pinto environment and execute commands inside of it
+```console
+(base) ~$ conda activate pinto
+(pinto) ~$ pinto --version
+```
+
+### Setting the Poetry virtualenvs path
+Whether you installed pinto your base environment or in a virtual environment, we recommend setting up Poetry's default virtual environment path so that it installs environments to the same location as conda. With the desired environment activated, run
+```console
+(base OR pinto) ~$ poetry config virtualenvs.path $CONDA_PREFIX/envs
 ```
 
 ### Development Installation
-The best way to install `pinto` for development is to clone this repo and perform an editable installation with the development dependencies included:
-
-```
+To develop pinto, clone the repo locally
+```console
 (base) ~$ git clone https://github.com/ML4GW/pinto.git
-(base) ~$ python -m pip install -e pinto[dev]
+```
+Then complete either installation method above, but with the local library installed editably. For base installs:
+```console
+(base) ~$ python -m pip install ./pinto[dev]
+```
+
+For virtual environment installs, edit the `environment.yaml` so that the pinto install line is replaced with
+```yaml
+  - -e .[dev]
+```
+Then run
+```console
+(base) ~$ cd pinto
+(base) ~$ conda env create -f environment.yaml
 ```
