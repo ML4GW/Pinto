@@ -60,6 +60,10 @@ class Environment:
 class PoetryEnvironment(Environment):
     def __post_init__(self):
         self._poetry = Factory().create_poetry(self.path)
+        prefix = os.getenv("CONDA_PREFIX")
+        if prefix is not None:
+            self._poetry.config.virtualenvs_path = Path(prefix) / "envs"
+
         self._manager = EnvManager(self._poetry)
         self._io = Application.create_io(self)
 
