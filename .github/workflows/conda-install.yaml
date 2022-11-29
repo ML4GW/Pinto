@@ -18,7 +18,7 @@ jobs:
     steps:
       - 
         name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.1.1
       - 
         name: Set up miniconda
         uses: conda-incubator/setup-miniconda@v2
@@ -26,7 +26,7 @@ jobs:
           auto-activate-base: true
           activate-environment: ""
           auto-update-conda: true
-          miniconda-version: Miniconda3-py39_${{ matrix.miniconda-version }}-Linux-x86_64.sh
+          miniconda-version: py39_${{ matrix.miniconda-version }}
       -
         name: Create virtualenv
         env:
