@@ -18,10 +18,10 @@ jobs:
     steps:
       - 
         name: Check out the repo
-        uses: actions/checkout@v2.1.1
+        uses: actions/checkout@v2
       - 
         name: Set up miniconda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v2.1.1
         with:
           auto-activate-base: true
           activate-environment: ""
