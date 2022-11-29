@@ -29,13 +29,12 @@ jobs:
           miniconda-version: py39_${{ matrix.miniconda-version }}
       -
         name: Create virtualenv
-        env:
-          envfile: /opt/pinto/environment.yaml
         run: |
-          sed -i 's/python<3.11/python=${{ matrix.python-version }}/g' ${envfile}
-          sed -i 's/git+https:\/\/github\.com\/ML4GW\/pinto@main/\.\[dev\]/g' ${envfile}
-          conda env create -f ${envfile}
+          sed -i 's/python<3.11/python=${{ matrix.python-version }}/g' environment.yaml
+          sed -i 's/git+https:\/\/github\.com\/ML4GW\/pinto@main/\.\[dev\]/g' environment.yaml
+          cat environment.yaml
+          conda env create -f environment.yaml
       -
         name: Run tests in virtualenv
         run: |
-          conda run -n pinto pytest /opt/pinto/tests
+          conda run -n pinto pytest tests
