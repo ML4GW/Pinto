@@ -39,6 +39,5 @@ jobs:
       -
         name: Run tests
         run: |
-            printenv
             python -m pip install pytest pyyaml
-            pytest tests
+            pytest tests -vvv

@@ -38,4 +38,4 @@ jobs:
       -
         name: Run tests in virtualenv
         run: |
-          conda run -n pinto pytest tests
+          conda run -n pinto pytest tests -vvv

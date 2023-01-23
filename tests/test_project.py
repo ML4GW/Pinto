@@ -170,10 +170,10 @@ def test_project_with_cuda_version(
 
 PIPELINE_SCRIPT = """
 import os
-from hermes.typeo import typeo
+from typeo import scriptify
 
 
-@typeo
+@scriptify
 def main(i: int):
     env = int(os.environ.get("ENVARG", "0"))
     print(f"arg is equal to {i + env}")
@@ -195,7 +195,10 @@ def test_pipeline(make_project_dir, dotenv, capfd):
 
         config["tool"]["poetry"]["scripts"].pop("testme")
         config["tool"]["poetry"]["scripts"][f"testme{i}"] = f"project{i}:main"
-        config["tool"]["poetry"]["dependencies"]["hermes.typeo"] = "^0.1.5"
+        config["tool"]["poetry"]["dependencies"]["typeo"] = {
+            "git": "https://github.com/ML4GW/typeo.git",
+            "branch": "main",
+        }
 
         with open(project_dir / "pyproject.toml", "w") as f:
             toml.dump(config, f)

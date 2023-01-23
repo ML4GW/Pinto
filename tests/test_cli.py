@@ -17,8 +17,10 @@ def test_cli_command_objects():
     assert run.name == "run"
 
 
-def run_command(cmd):
-    response = subprocess.run(cmd, shell=False, capture_output=True, text=True)
+def run_command(cmd, cwd):
+    response = subprocess.run(
+        cmd, shell=False, capture_output=True, text=True, cwd=cwd
+    )
     if response.returncode:
         raise RuntimeError(
             f"Error encountered when running command {cmd}.\n"
@@ -39,48 +41,50 @@ def test_cli_build_poetry(
     installed_project_tests,
     extras,
 ):
-    cmd = shutil.which("pinto")
+    cmd = [shutil.which("pinto")]
     if project_flag is None:
-        cmd = ["cd", str(project_dir), "&&", cmd]
+        cwd = str(project_dir)
     else:
-        cmd = [cmd, project_flag, str(project_dir)]
+        cwd = None
+        cmd.extend([project_flag, str(project_dir)])
     cmd.append("build")
 
     if extras is not None:
         cmd.extend(["-E", "extra"])
-    run_command(cmd)
+    run_command(cmd, cwd)
 
     project = Project(project_dir)
     with poetry_env_context(project._venv):
         installed_project_tests(project)
 
     with pytest.raises(RuntimeError) as exc_info:
-        run_command(cmd + ["--no-more args"])
+        run_command(cmd + ["--no-more args"], cwd)
     assert "Unknown arguments ['--no-more', 'args']" in str(exc_info.value)
 
 
 def test_cli_run_poetry(project_dir, project_flag, poetry_env_context):
     cmd = [shutil.which("pinto"), "-v"]
     if project_flag is None:
-        cmd = ["cd", str(project_dir), "&&"] + cmd
+        cwd = str(project_dir)
     else:
+        cwd = None
         cmd += [project_flag, str(project_dir)]
     cmd.extend(["run", "testme"])
 
     try:
-        output = run_command(cmd)
+        output = run_command(cmd, cwd)
         assert output.rstrip().splitlines()[-1] == "can you hear me?"
 
         # get rid of the command and make sure this raises an error
         with pytest.raises(RuntimeError) as exc_info:
-            run_command(cmd[:-1])
+            run_command(cmd[:-1], cwd)
         msg = str(exc_info.value)
         assert "ValueError: Must provide a command to run!" in msg
 
         if project_flag is not None:
             with pytest.raises(RuntimeError) as exc_info:
                 cmd = f"pinto -v {project_flag} /bad/path run testme".split()
-                run_command(cmd)
+                run_command(cmd, None)
             msg = str(exc_info.value)
             assert "ValueError: Project /bad/path does not exist" in msg
     finally:
@@ -108,7 +112,7 @@ def test_cli_run_with_dotenv(
             # and so the environment variables should not get set
             cmd = f"{pinto_cmd} python -c".split() + [py_cmd]
             with pytest.raises(RuntimeError) as exc_info:
-                run_command(cmd)
+                run_command(cmd, None)
             assert "KeyError" in str(exc_info.value)
 
             # if there is an env file, just not one called .env,
@@ -116,13 +120,13 @@ def test_cli_run_with_dotenv(
             if dotenv is not None:
                 env = project_dir / dotenv
                 cmd = f"{pinto_cmd} -e {env} python -c".split() + [py_cmd]
-                output = run_command(cmd)
+                output = run_command(cmd, None)
                 assert output.endswith("thom\nthom-yorke\n")
         else:
             # if there is a .env file, we shouldn't need to
             # specify anything: pinto will pick it up on its own
             cmd = f"{pinto_cmd} python -c".split() + [py_cmd]
-            output = run_command(cmd)
+            output = run_command(cmd, None)
             assert output.endswith("thom\nthom-yorke\n")
     finally:
         project = Project(project_dir)
