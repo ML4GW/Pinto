@@ -32,7 +32,7 @@ def extras(request):
 @pytest.fixture
 def make_project_dir(conda_poetry_config, tmp_path):
     def f(project_name, extras=None, conda=False, subdir=False):
-        project_dir = tmp_path
+        project_dir = tmp_path / "project"
         if subdir:
             project_dir = project_dir / project_name
 
@@ -75,15 +75,15 @@ def make_project_dir(conda_poetry_config, tmp_path):
 
 
 @pytest.fixture
-def project_dir(make_project_dir, project_name, extras):
-    return make_project_dir(project_name, extras)
+def project_dir(make_project_dir, project_name, extras, tmp_path):
+    yield make_project_dir(project_name, extras)
+    shutil.rmtree(tmp_path)
 
 
 @pytest.fixture
-def conda_project_dir(make_project_dir, project_name, extras):
-    project_dir = make_project_dir(project_name, extras, True)
-    yield project_dir
-    shutil.rmtree(project_dir)
+def conda_project_dir(make_project_dir, project_name, extras, tmp_path):
+    yield make_project_dir(project_name, extras, True)
+    shutil.rmtree(tmp_path)
 
 
 @pytest.fixture(params=["yaml", "yml"])
