@@ -34,7 +34,7 @@ jobs:
           sed -i 's/git+https:\/\/github\.com\/ML4GW\/pinto@main/\.\[dev\]/g' environment.yaml
           cat environment.yaml
           conda env create -f environment.yaml
-          conda install -n pinto pytest
+          conda install -n pinto pytest pyyaml
       -
         name: Run tests in virtualenv
         run: |
