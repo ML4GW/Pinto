@@ -79,7 +79,7 @@ class PoetryEnvironment(Environment):
             # logic is a lot to reimplement and is the
             # environment doesn't exist yet, this seems
             # like a fair thing to return
-            return self._manager.get()
+            return self._manager.get().path
         return self._venv.path
 
     @property

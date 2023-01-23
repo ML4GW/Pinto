@@ -77,13 +77,13 @@ def make_project_dir(conda_poetry_config, tmp_path):
 @pytest.fixture
 def project_dir(make_project_dir, project_name, extras, tmp_path):
     yield make_project_dir(project_name, extras)
-    shutil.rmtree(tmp_path)
+    shutil.rmtree(str(tmp_path))
 
 
 @pytest.fixture
 def conda_project_dir(make_project_dir, project_name, extras, tmp_path):
     yield make_project_dir(project_name, extras, True)
-    shutil.rmtree(tmp_path)
+    shutil.rmtree(str(tmp_path))
 
 
 @pytest.fixture(params=["yaml", "yml"])
@@ -109,7 +109,7 @@ def complete_conda_project_dir(
         for f in conda_project_dir.iterdir():
             if f.name == "testlib":
                 continue
-            shutil.move(conda_project_dir / f, project_dir)
+            shutil.move(str(conda_project_dir / f), project_dir)
 
         # if we're testing the "<name>-base" syntax, replace
         # the name in the environment dictionary
@@ -176,7 +176,7 @@ def poetry_env_context():
         try:
             yield
         finally:
-            shutil.rmtree(env.env_root)
+            shutil.rmtree(str(env.env_root))
 
     return ctx
 
