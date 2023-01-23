@@ -12,7 +12,7 @@ pinto = "pinto.cli:main"
 python = "^3.8,<3.11"
 toml = "^0.10"
 python-dotenv = "^0.20"
-"hermes.typeo" = "^0.1.5"
+typeo = {git = "https://github.com/ML4GW/typeo.git", branch = "main"}
 
 [tool.poetry.group.dev.dependencies]
 pip = "^21.3"
@@ -40,5 +40,5 @@ multi_line_output = 3
 include_trailing_comma = true
 
 [build-system]
-requires = ["poetry>=1.2.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
