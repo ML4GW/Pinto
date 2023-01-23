@@ -11,7 +11,7 @@ jobs:
     name: Test conda installation
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python-version: ["37", "38", "39"]
         miniconda-version: ["4.10.3", "4.11.0", "4.12.0"]
@@ -31,8 +31,11 @@ jobs:
       -
         name: Install deps and library
         run: |
+          conda activate base
           python -m pip install poetry==${{ matrix.poetry-version }}
-          python -m pip install pytest .
+          python -m pip install pytest pyyaml .
       -
         name: Run tests
-        run: pytest tests
+        run: |
+          conda activate base
+          pytest tests
