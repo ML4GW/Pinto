@@ -1,9 +1,7 @@
-import os
 import shutil
 import subprocess
 from contextlib import contextmanager
 from functools import partial
-from pathlib import Path
 
 import pytest
 import toml
@@ -32,11 +30,11 @@ def extras(request):
 
 
 @pytest.fixture
-def make_project_dir(conda_poetry_config):
+def make_project_dir(conda_poetry_config, tmp_path):
     def f(project_name, extras=None, conda=False, subdir=False):
-        project_dir = Path(__file__).resolve().parent / "tmp"
+        project_dir = tmp_path
         if subdir:
-            project_dir /= project_name
+            project_dir = project_dir / project_name
 
         standardized_name = project_name.replace("-", "_")
         # TODO: fixture for python version?
@@ -62,7 +60,7 @@ def make_project_dir(conda_poetry_config):
             }
             pyproject["tool"]["poetry"]["extras"] = {"extra": ["attrs"]}
 
-        os.makedirs(project_dir)
+        project_dir.mkdir(parents=True, exist_ok=False)
         with open(project_dir / "pyproject.toml", "w") as f:
             toml.dump(pyproject, f)
         with open(project_dir / (standardized_name + ".py"), "w") as f:
@@ -78,9 +76,7 @@ def make_project_dir(conda_poetry_config):
 
 @pytest.fixture
 def project_dir(make_project_dir, project_name, extras):
-    project_dir = make_project_dir(project_name, extras)
-    yield project_dir
-    shutil.rmtree(project_dir)
+    return make_project_dir(project_name, extras)
 
 
 @pytest.fixture
@@ -109,9 +105,9 @@ def complete_conda_project_dir(
         # if we'r nesting, copy all the files from the
         # test project into a subdirectory
         project_dir = conda_project_dir / "testlib"
-        os.makedirs(project_dir)
-        for f in os.listdir(conda_project_dir):
-            if f == "testlib":
+        project_dir.mkdir()
+        for f in conda_project_dir.iterdir():
+            if f.name == "testlib":
                 continue
             shutil.move(conda_project_dir / f, project_dir)
 
