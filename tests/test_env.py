@@ -124,13 +124,14 @@ def test_conda_environment(
     extras,
     test_installed_env,
     capfd,
+    tmp_path,
 ):
     # make sure that the __new__ method maps correctly from
     # a project with a "poetry.toml" to a CondaEnvironment
     env = Environment(conda_project)
     assert isinstance(env, CondaEnvironment)
 
-    expected_path = Path(__file__).resolve().parent / "tmp"
+    expected_path = tmp_path / "project"
     expected_env = expected_path / ("environment." + yaml_extension)
     expected_name = "pinto-testenv"
     if nest:

@@ -47,7 +47,7 @@ def make_project_dir(conda_poetry_config, tmp_path):
                     "authors": ["test author <test@testproject.biz>"],
                     "scripts": {"testme": standardized_name + ":main"},
                     "dependencies": {
-                        "python": ">=3.9,<3.11",
+                        "python": ">=3.7,<3.11",
                         "pip_install_test": "^0.5",
                     },
                 }
