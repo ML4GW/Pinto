@@ -1,8 +1,18 @@
 # Pinto
 A command line utility for managing and running jobs in complex Python environments.
 
-Support for:
+Support tested for:
+
 ![poetry 1.2.0a2](https://img.shields.io/badge/poetry-1.2.0a2-sucess)
+![poetry 1.2.0b2](https://img.shields.io/badge/poetry-1.2.0b2-sucess)
+![poetry 1.2.0b3](https://img.shields.io/badge/poetry-1.2.0b3-sucess)
+![poetry 1.2.1](https://img.shields.io/badge/poetry-1.2.1-sucess)
+![poetry 1.2.2](https://img.shields.io/badge/poetry-1.2.2-sucess)
+
+![conda 4.10.3](https://img.shields.io/badge/conda-4.10.3-sucess)
+![conda 4.11.0](https://img.shields.io/badge/conda-4.11.0-sucess)
+![conda 4.12.0](https://img.shields.io/badge/conda-4.12.0-sucess)
+
 
 ## Background
 Most ongoing research in the [ML4GW](https://github.com/ML4GW) organization leverages [Poetry](https://python-poetry.org/) for managing Python virtual environments in the context of a [Python monorepo](https://medium.com/opendoor-labs/our-python-monorepo-d34028f2b6fa). In particular, Poetry makes managing a shared set of libraries between jobs within a project [simple and straightforward](https://python-poetry.org/docs/dependency-specification/#path-dependencies).
@@ -69,8 +79,10 @@ To see more examples of project structures, consult the [`examples`](./examples)
 
 
 ## Installation
+For any non-containerized installation methods, please consult the support matrix at the top of this document to see which versions of Anaconda and Poetry are supported by `pinto`.
+
 ### Container
-The simplest way to get started with pinto is to run its container, which is made available through GitHub's container registry. You can pull it by running
+The simplest way to get started with pinto is to use the container published by this repository, which is made available through GitHub's container registry. You can pull it by running
 ```
 docker pull ghcr.io/ML4GW/pinto:main
 ```
@@ -79,7 +91,7 @@ See [this document](https://docs.github.com/en/packages/working-with-a-github-pa
 ### Conda
 Pinto can only be installed on top of Anaconda, so make sure you have a *local* install available to work with (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html). I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway.
 
-**NOTE: `pinto` is only compatible with 4.x Conda versions!! To find the appropriate Miniconda installer, please look at the [installer archives](https://repo.anaconda.com/miniconda/).
+**NOTE: `pinto` is currently only compatible with 4.x Conda versions!! To find the appropriate Miniconda installer, please look at the [installer archives](https://repo.anaconda.com/miniconda/).
 
 Your options are then to either install `pinto` in the `base` conda environment (recommended), or in a virtual environment. If you choose to go the latter route, the conda environments managed by pinto will be kept in a subdirectory of pinto's environment.
 
