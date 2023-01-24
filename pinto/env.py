@@ -12,6 +12,7 @@ import toml
 from cleo.application import Application
 
 from pinto.logging import logger
+from pinto.utils import temp_env_set
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 class Environment:
     project: "Project"
 
-    def __new__(self, project):
+    def __new__(cls, project: "Project") -> "Environment":
         try:
             with open(project.path / "poetry.toml", "r") as f:
                 poetry_config = toml.load(f)
@@ -94,7 +95,12 @@ class PoetryEnvironment(Environment):
         return self._manager.get() != self._manager.get_system_env()
 
     def create(self):
-        self._venv = self._manager.create_venv(self._io)
+        # set this environment variable in case we're running
+        # inside a pinto virtual environment so that poetry
+        # doesn't know we're inside a virtualenv besides base
+        # and decide to use the system env
+        with temp_env_set(CONDA_DEFAULT_ENV="base"):
+            self._venv = self._manager.create_venv(self._io)
         return self._venv
 
     def contains(self, project: "Project") -> bool:

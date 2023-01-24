@@ -1,5 +1,4 @@
 import os
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
@@ -9,43 +8,7 @@ from dotenv import load_dotenv
 
 from pinto.env import Environment
 from pinto.logging import logger
-
-
-@contextmanager
-def temp_env_set(**kwargs):
-    unset = {}
-    for key, value in kwargs.items():
-        try:
-            old_value = os.environ[key]
-        except KeyError:
-            logger.debug(
-                "Setting environment variable {} to {}".format(key, value)
-            )
-            pass
-        else:
-            logger.debug(
-                "Setting environment variable {} from {} to {}".format(
-                    key, old_value, value
-                )
-            )
-            unset[key] = old_value
-
-        os.environ[key] = value
-    yield
-
-    for key, value in kwargs.items():
-        try:
-            old_value = unset[key]
-        except KeyError:
-            logger.debug(f"Removing environment variable {key}")
-            os.environ.pop(key)
-        else:
-            logger.debug(
-                "Resetting environment variable {} to {}".format(
-                    key, old_value
-                )
-            )
-            os.environ[key] = old_value
+from pinto.utils import temp_env_set
 
 
 @dataclass
@@ -203,12 +166,9 @@ class Project(ProjectBase):
         if not self._venv.exists() or not self._venv.contains(self):
             self.install()
 
-        # set this in case we're running inside
-        # a pinto virtual environment
-        env = {"CONDA_DEFAULT_ENV": "base"}
-
         # check if the project has specified a CUDA version to run with
         cuda_version = self.pinto_config.get("cuda-version")
+        env = {}
         if cuda_version is not None:
             # if the version specified isn't a path to a CUDA
             # lib directory, assume it specifies a version
