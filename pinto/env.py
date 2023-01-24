@@ -5,6 +5,7 @@ import subprocess
 import sys
 import warnings
 from dataclasses import dataclass
+from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Optional
 
@@ -58,6 +59,19 @@ class Environment:
         return self.project.path
 
 
+def _poetry_conda_context(f):
+    @wraps(f)
+    def wrapper(obj, *args, **kwargs):
+        # set this environment variable in case we're running
+        # inside a pinto virtual environment so that poetry
+        # doesn't know we're inside a virtualenv besides base
+        # and decide to use the system env
+        with temp_env_set(CONDA_DEFAULT_ENV="base"):
+            return f(obj, *args, **kwargs)
+
+    return wrapper
+
+
 @dataclass
 class PoetryEnvironment(Environment):
     def __post_init__(self):
@@ -73,6 +87,10 @@ class PoetryEnvironment(Environment):
         else:
             self.create()
 
+    @_poetry_conda_context
+    def get(self):
+        return self._manager.get()
+
     @property
     def env_root(self):
         if self._venv is None:
@@ -80,7 +98,7 @@ class PoetryEnvironment(Environment):
             # logic is a lot to reimplement and is the
             # environment doesn't exist yet, this seems
             # like a fair thing to return
-            return self._manager.get().path
+            return self.get().path
         return self._venv.path
 
     @property
@@ -92,15 +110,11 @@ class PoetryEnvironment(Environment):
         )
 
     def exists(self) -> bool:
-        return self._manager.get() != self._manager.get_system_env()
+        return self.get() != self._manager.get_system_env()
 
+    @_poetry_conda_context
     def create(self):
-        # set this environment variable in case we're running
-        # inside a pinto virtual environment so that poetry
-        # doesn't know we're inside a virtualenv besides base
-        # and decide to use the system env
-        with temp_env_set(CONDA_DEFAULT_ENV="base"):
-            self._venv = self._manager.create_venv(self._io)
+        self._venv = self._manager.create_venv(self._io)
         return self._venv
 
     def contains(self, project: "Project") -> bool:

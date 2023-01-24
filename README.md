@@ -1,6 +1,9 @@
 # Pinto
 A command line utility for managing and running jobs in complex Python environments.
 
+Support for:
+![poetry 1.2.0a2](https://img.shields.io/badge/poetry-1.2.0a2-sucess)
+
 ## Background
 Most ongoing research in the [ML4GW](https://github.com/ML4GW) organization leverages [Poetry](https://python-poetry.org/) for managing Python virtual environments in the context of a [Python monorepo](https://medium.com/opendoor-labs/our-python-monorepo-d34028f2b6fa). In particular, Poetry makes managing a shared set of libraries between jobs within a project [simple and straightforward](https://python-poetry.org/docs/dependency-specification/#path-dependencies).
 
@@ -74,14 +77,16 @@ docker pull ghcr.io/ML4GW/pinto:main
 See [this document](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry) for information about how to authenticate to the GitHub container reigstry.
 
 ### Conda
-Pinto can only be installed on top of Anaconda, so make sure you have a `local` install available to work with (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html). I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway.
+Pinto can only be installed on top of Anaconda, so make sure you have a *local* install available to work with (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html). I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway.
+
+**NOTE: `pinto` is only compatible with 4.x Conda versions!! To find the appropriate Miniconda installer, please look at the [installer archives](https://repo.anaconda.com/miniconda/).
 
 Your options are then to either install `pinto` in the `base` conda environment (recommended), or in a virtual environment. If you choose to go the latter route, the conda environments managed by pinto will be kept in a subdirectory of pinto's environment.
 
 #### Installing in the base conda environment
 First install poetry via pip
 ```console
-(base) ~$ python -m pip install "poetry>1.2.0"
+(base) ~$ python -m pip install "poetry>1.2.0,<1.3.0"
 ```
 then install pinto via pip
 ```console
@@ -112,7 +117,7 @@ To develop pinto, clone the repo locally
 ```
 Then complete either installation method above, but with the local library installed editably. For base installs:
 ```console
-(base) ~$ python -m pip install ./pinto[dev]
+(base) ~$ python -m pip install -e ./pinto[dev]
 ```
 
 For virtual environment installs, edit the `environment.yaml` so that the pinto install line is replaced with
