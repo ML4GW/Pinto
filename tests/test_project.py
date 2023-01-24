@@ -105,7 +105,7 @@ def validate_project_dotenv(validate_dotenv, capfd):
     def validate(project):
         def run_fn(*cmd, env=None):
             project.run(*cmd, env=env)
-            return capfd.readouterr().err
+            return capfd.readouterr().out
 
         validate_dotenv(project.path, run_fn, SystemExit)
 
