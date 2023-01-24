@@ -211,7 +211,7 @@ def dotenv(request):
 
 @pytest.fixture
 def validate_dotenv(dotenv, capfd):
-    def f(project):
+    def f(project_dir, run_fn, expected_raise):
         script = """
             import os
             print(os.environ['ENVARG1'])
@@ -219,26 +219,29 @@ def validate_dotenv(dotenv, capfd):
         """
         script = "\n".join([i.strip() for i in script.splitlines()])
 
+        cmd = ["python", "-c", script]
         if dotenv != ".env":
             # if there's no .env, pinto won't know to look for one
             # and so the environment variables should not get set
-            with pytest.raises(SystemExit):
-                project.run("python", "-c", script)
-            stderr = capfd.readouterr().err
+            with pytest.raises(expected_raise) as exc:
+                run_fn(*cmd, env=None)
+
+            if expected_raise is SystemExit:
+                stderr = capfd.readouterr().err
+            else:
+                stderr = str(exc.value)
             assert "KeyError" in stderr
 
             # if there is an env file, just not one called .env,
             # we can specify explicitly via the `env` argument
             if dotenv is not None:
-                env = str(project.path / dotenv)
-                project.run("python", "-c", script, env=env)
-                stdout = capfd.readouterr().out
-                assert stdout == "thom\nthom-yorke\n"
+                env = str(project_dir / dotenv)
+                stdout = run_fn(*cmd, env=env)
+                assert stdout.endswith("thom\nthom-yorke\n")
         elif dotenv == ".env":
             # if there is a .env file, we shouldn't need to
             # specify anything: pinto will pick it up on its own
-            project.run("python", "-c", script)
-            stdout = capfd.readouterr().out
+            stdout = run_fn(*cmd, env=None)
             assert stdout.endswith("thom\nthom-yorke\n")
 
     return f

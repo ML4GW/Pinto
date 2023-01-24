@@ -94,21 +94,34 @@ def conda_dotenv_project_dir(
         os.environ.pop("ENVARG2")
 
 
+@pytest.fixture
+def validate_project_dotenv(validate_dotenv, capfd):
+    def validate(project):
+        def run_fn(*cmd, env=None):
+            project.run(*cmd, env)
+            return capfd.readouterr().err
+
+        validate_dotenv(project.path, run_fn, SystemExit)
+
+
 def test_poetry_project_with_dotenv(
-    poetry_dotenv_project_dir, poetry_env_context, dotenv, validate_dotenv
+    poetry_dotenv_project_dir,
+    poetry_env_context,
+    dotenv,
+    validate_project_dotenv,
 ):
     project = Project(poetry_dotenv_project_dir)
     with poetry_env_context(project.venv):
         project.install()
-        validate_dotenv(project)
+        validate_project_dotenv(project)
 
 
 def test_conda_project_with_dotenv(
-    conda_dotenv_project_dir, dotenv, validate_dotenv
+    conda_dotenv_project_dir, dotenv, validate_project_dotenv
 ):
     project = Project(conda_dotenv_project_dir)
     project.install()
-    validate_dotenv(project)
+    validate_project_dotenv(project.run)
 
 
 @pytest.fixture(params=[11.2, "local-dir"])
