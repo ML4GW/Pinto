@@ -38,4 +38,5 @@ jobs:
       -
         name: Run tests in virtualenv
         run: |
-          conda run -n pinto pytest tests -vvv
+          conda activate pinto
+          pytest tests -vvv

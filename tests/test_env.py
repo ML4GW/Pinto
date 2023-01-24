@@ -184,7 +184,7 @@ def test_conda_environment(
         else:
             env.install(extras=["extra"])
 
-        capfd.readouterr()  # clear the stdout buffer
+        print(capfd.readouterr().out)  # clear the stdout buffer
         test_installed_env(env, conda_project)
 
 
