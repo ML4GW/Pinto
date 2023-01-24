@@ -1,4 +1,5 @@
 import os
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
@@ -8,6 +9,43 @@ from dotenv import load_dotenv
 
 from pinto.env import Environment
 from pinto.logging import logger
+
+
+@contextmanager
+def temp_env_set(**kwargs):
+    unset = {}
+    for key, value in kwargs.items():
+        try:
+            old_value = os.environ[key]
+        except KeyError:
+            logger.debug(
+                "Setting environment variable {} to {}".format(key, value)
+            )
+            pass
+        else:
+            logger.debug(
+                "Setting environment variable {} from {} to {}".format(
+                    key, old_value, value
+                )
+            )
+            unset[key] = old_value
+
+        os.environ[key] = value
+    yield
+
+    for key, value in kwargs.items():
+        try:
+            old_value = unset[key]
+        except KeyError:
+            logger.debug(f"Removing environment variable {key}")
+            os.environ.pop(key)
+        else:
+            logger.debug(
+                "Resetting environment variable {} to {}".format(
+                    key, old_value
+                )
+            )
+            os.environ[key] = old_value
 
 
 @dataclass
@@ -165,6 +203,10 @@ class Project(ProjectBase):
         if not self._venv.exists() or not self._venv.contains(self):
             self.install()
 
+        # set this in case we're running inside
+        # a pinto virtual environment
+        env = {"CONDA_DEFAULT_ENV": "base"}
+
         # check if the project has specified a CUDA version to run with
         cuda_version = self.pinto_config.get("cuda-version")
         if cuda_version is not None:
@@ -178,7 +220,7 @@ class Project(ProjectBase):
             # environment variable so that it's the first
             # place that gets checked
             ld_library_path = os.getenv("LD_LIBRARY_PATH", "")
-            os.environ["LD_LIBRARY_PATH"] = f"{cuda_version}:{ld_library_path}"
+            env["LD_LIBRARY_PATH"] = f"{cuda_version}:{ld_library_path}"
 
         # now load any other environment variables
         # passed in from a .env file so that users
@@ -187,14 +229,8 @@ class Project(ProjectBase):
         self.load_dotenv(kwargs.get("env"))
 
         logger.debug(f"Executing command '{args}' in project {self.path}")
-        try:
+        with temp_env_set(**env):
             response = self._venv.run(*args)
-        finally:
-            if cuda_version is not None:
-                if ld_library_path:
-                    os.environ["LD_LIBRARY_PATH"] = ld_library_path
-                else:
-                    os.environ.pop("LD_LIBRARY_PATH")
         return response
 
 
