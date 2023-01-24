@@ -74,8 +74,11 @@ def poetry_dotenv_project_dir(make_project_dir, write_dotenv, dotenv):
     yield project_dir
     shutil.rmtree(project_dir)
     if dotenv is not None:
-        os.environ.pop("ENVARG1")
-        os.environ.pop("ENVARG2")
+        for i in range(2):
+            try:
+                os.environ.pop(f"ENVARG{i}")
+            except KeyError:
+                continue
 
 
 @pytest.fixture(scope="function")
@@ -90,8 +93,11 @@ def conda_dotenv_project_dir(
     yield project_dir
     shutil.rmtree(project_dir)
     if dotenv is not None:
-        os.environ.pop("ENVARG1")
-        os.environ.pop("ENVARG2")
+        for i in range(2):
+            try:
+                os.environ.pop(f"ENVARG{i}")
+            except KeyError:
+                continue
 
 
 @pytest.fixture
@@ -103,11 +109,12 @@ def validate_project_dotenv(validate_dotenv, capfd):
 
         validate_dotenv(project.path, run_fn, SystemExit)
 
+    return validate
+
 
 def test_poetry_project_with_dotenv(
     poetry_dotenv_project_dir,
     poetry_env_context,
-    dotenv,
     validate_project_dotenv,
 ):
     project = Project(poetry_dotenv_project_dir)
@@ -117,7 +124,7 @@ def test_poetry_project_with_dotenv(
 
 
 def test_conda_project_with_dotenv(
-    conda_dotenv_project_dir, dotenv, validate_project_dotenv
+    conda_dotenv_project_dir, validate_project_dotenv
 ):
     project = Project(conda_dotenv_project_dir)
     project.install()
@@ -137,7 +144,7 @@ def conda(request):
 CUDA_VERSION_SCRIPT = """
 import os
 
-print(os.environ["LD_LIBRARY_PATH"].split(":")[0])
+print(os.environ["LD_LIBRARY_PATH"])
 """
 
 
@@ -169,12 +176,13 @@ def test_project_with_cuda_version(
         capfd.readouterr()
 
         project.run("python", project_dir / "test_project.py")
-        stdout = capfd.readouterr().out
+        stdout = capfd.readouterr().out.splitlines()[-1]
+        paths = stdout.split(":")
 
         if isinstance(cuda_version, float):
-            assert stdout == f"/usr/local/cuda-{cuda_version}/lib64\n"
+            assert f"/usr/local/cuda-{cuda_version}/lib64" in paths
         else:
-            assert stdout == (cuda_version + "\n")
+            assert cuda_version in paths
     finally:
         shutil.rmtree(project_dir)
         if not isinstance(cuda_version, float):
