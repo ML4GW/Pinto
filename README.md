@@ -91,7 +91,7 @@ See [this document](https://docs.github.com/en/packages/working-with-a-github-pa
 ### Conda
 Pinto can only be installed on top of Anaconda, so make sure you have a *local* install available to work with (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html). I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway.
 
-**NOTE: `pinto` is currently only compatible with 4.x Conda versions!! To find the appropriate Miniconda installer, please look at the [installer archives](https://repo.anaconda.com/miniconda/).
+> **NOTE**: `pinto` is currently only compatible with 4.x Conda versions!! To find the appropriate Miniconda installer, please look at the [installer archives](https://repo.anaconda.com/miniconda/).
 
 Your options are then to either install `pinto` in the `base` conda environment (recommended), or in a virtual environment. If you choose to go the latter route, the conda environments managed by pinto will be kept in a subdirectory of pinto's environment.
 
