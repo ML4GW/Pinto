@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 import re
-import shutil
 import sys
 from collections import OrderedDict
 from pathlib import Path
@@ -132,37 +131,38 @@ class RunCommand(Command):
     def print_help(cls, flags: argparse.Namespace) -> None:
         project = cls.get_project(flags.project)
         if isinstance(project, Project):
-            msg = cls.subparser.format_help()
+            msg = cls.subparser.format_help() + "\n"
 
             scripts = project.config["tool"]["poetry"]["scripts"].keys()
-            if not project.env.exists():
+            if not project.venv.exists():
                 msg += (
                     "Project {} hasn't been installed so no scripts "
                     "are currently available. Available scripts "
-                    "after installation are:{}".format(
+                    "after installation are:\n\t{}".format(
                         project.name, "\n\t".join(scripts)
                     )
                 )
             else:
                 installed, not_installed = [], []
+                bin_path = project.venv.env_root / "bin"
                 for script in scripts:
-                    if shutil.which(script) is not None:
+                    if (bin_path / script).exists():
                         installed.append(script)
                     else:
                         not_installed.append(script)
 
                 if installed:
-                    msg += "Scripts available in project {} are:{}".format(
+                    msg += "Scripts available in project {} are:\n\t{}".format(
                         project.name, "\n\t".join(installed)
                     )
                 if not_installed:
                     msg += (
                         "Project {} has scripts which have not "
-                        "yet been installed {}:".format(
+                        "yet been installed:\n\t{}".format(
                             project.name, "\n\t".join(not_installed)
                         )
                     )
-            cls.subparser._print_message(msg)
+            cls.subparser._print_message(msg + "\n")
         else:
             cls.subparser.print_help()
         cls.subparser.exit()
@@ -243,15 +243,14 @@ def main():
                 parser.exit()
             else:
                 parser.error(
-                    "Must specify a command. Available commands are:{}".format(
-                        "\n\t".join(_commands.keys())
-                    )
+                    "Must specify a command. Available commands "
+                    "are:\n\t{}".format("\n\t".join(_commands.keys()))
                 )
         else:
             # otherwise we specified an invalid command
             parser.error(f"Unrecognized command {flags.command}")
     else:
-        command.run(flags, extra_args)
+        command.check_and_run(flags, extra_args)
 
 
 if __name__ == "__main__":
